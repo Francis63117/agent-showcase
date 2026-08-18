@@ -1,0 +1,590 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生财早报官 · AI Agent 展示</title>
+<style>
+  :root{
+    --bg:#FAF7F2; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#FBF6F9; --line:#EFE4EC;
+    --txt:#3A3440; --sub:#8A7F90; --dim:#B3A7B8;
+    --acc:#C06AA8; --acc2:#9674C8; --ok:#4FAF8F; --warn:#C78A3A; --err:#D96C6C;
+    --grad:linear-gradient(90deg,#C078B0,#A070C0);
+    --shadow:0 12px 34px rgba(120,90,150,.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(217,122,168,.32)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+  a{color:inherit;text-decoration:none}
+
+  /* ===== Nav ===== */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(14px);background:rgba(255,252,248,.78);border-bottom:1px solid transparent;transition:.3s}
+  nav.scrolled{border-bottom-color:var(--line);background:rgba(255,252,248,.95)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px}
+  .logo .lg{width:30px;height:30px;border-radius:9px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 4px 14px rgba(185,95,143,.45)}
+  .nav-links{display:flex;gap:22px;font-size:14px;color:var(--sub)}
+  .nav-links a:hover{color:var(--txt)}
+  .nav-cta{font-size:13px;color:var(--acc);border:1px solid rgba(185,95,143,.45);padding:6px 14px;border-radius:999px;background:rgba(185,95,143,.09)}
+  @media(max-width:760px){.nav-links{display:none}}
+
+  /* ===== Hero ===== */
+  .hero{position:relative;padding:150px 0 80px;overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;background:
+    radial-gradient(900px 420px at 15% -10%,rgba(216,240,235,.8),transparent 60%),
+    radial-gradient(700px 380px at 90% 0%,rgba(196,181,236,.5),transparent 55%),
+    radial-gradient(600px 300px at 50% 120%,rgba(168,216,197,.6),transparent 60%)}
+  .hero:after{content:"";position:absolute;inset:0;opacity:.5;background-image:radial-gradient(rgba(90,70,110,.07) 1px,transparent 1px);background-size:26px 26px;pointer-events:none}
+  .hero .wrap{position:relative;display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center}
+  .badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(17,26,46,.7);color:var(--acc);font-size:13px;padding:6px 14px;border-radius:999px;margin-bottom:22px}
+  .badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+  .hero h1{font-size:54px;line-height:1.15;font-weight:800;letter-spacing:1px}
+  .hero h1 .g{background:linear-gradient(90deg,#E7A8C8,#B7A5DB,#A8D8C5);background-size:200%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+  @keyframes shine{to{background-position:200%}}
+  .hero .sub{color:var(--sub);font-size:18px;margin-top:18px;max-width:600px}
+  .btns{margin-top:30px;display:flex;gap:14px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:12px;font-weight:600;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--txt);cursor:pointer;transition:.2s}
+  .btn.primary{background:var(--grad);border:none;color:#fff;box-shadow:0 8px 26px rgba(217,122,168,.32)}
+  .btn:hover{transform:translateY(-3px)}
+  .btn.primary:hover{box-shadow:0 12px 32px rgba(217,122,168,.45)}
+  /* hero chat card */
+  .mock{background:linear-gradient(160deg,#FDF1F6,#F1F7F0);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);position:relative}
+  .mock .mh{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
+  .ava{width:34px;height:34px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .mock .mb{font-size:13px;color:var(--txt);background:var(--bg2);border:1px solid var(--line);border-radius:12px;border-bottom-left-radius:4px;padding:12px 14px;line-height:1.7}
+  .mock .mb .hl{color:var(--acc)}
+  .mock .mt{display:flex;gap:8px;margin-top:12px}
+  .mock .mt span{font-size:11px;color:var(--dim);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:56px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
+  .stat .v{font-size:26px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .k{font-size:13px;color:var(--sub);margin-top:4px}
+  @media(max-width:900px){.hero .wrap{grid-template-columns:1fr}.mock{display:none}.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* ===== sections ===== */
+  section{padding:72px 0;border-bottom:1px solid var(--line);position:relative}
+  .kicker{color:var(--acc);font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .kicker:before{content:"";width:26px;height:2px;background:var(--grad);border-radius:2px}
+  h2{font-size:34px;margin:10px 0 10px;font-weight:800}
+  .lead{color:var(--sub);margin-bottom:34px;max-width:780px}
+  .reveal{opacity:0;transform:translateY(26px);transition:.7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;position:relative;overflow:hidden;transition:.25s}
+  .card:before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);opacity:0;transition:.25s}
+  .card:hover{transform:translateY(-5px);border-color:rgba(217,122,168,.4);box-shadow:0 14px 34px rgba(120,90,150,.12)}
+  .card:hover:before{opacity:1}
+  .card .ic{font-size:28px;width:52px;height:52px;border-radius:13px;background:var(--bg2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .card h3{font-size:17px;margin:16px 0 8px}
+  .card p{color:var(--sub);font-size:14px}
+
+  /* timeline */
+  .tl{position:relative;padding-left:30px}
+  .tl:before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--acc),var(--acc2),transparent)}
+  .step{position:relative;padding:0 0 28px 16px}
+  .step:before{content:"";position:absolute;left:-29px;top:5px;width:18px;height:18px;border-radius:50%;background:var(--bg);border:3px solid var(--acc);box-shadow:0 0 0 4px rgba(217,122,168,.16)}
+  .step .time{color:var(--acc);font-weight:800;font-size:14px}
+  .step h4{font-size:17px;margin:2px 0 4px}
+  .step p{color:var(--sub);font-size:14px;max-width:700px}
+
+  /* chat */
+  .chat{background:#FFFFFF;border:1px solid #F2E2EC;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  .chat-head{display:flex;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .chat-head .st{margin-left:auto;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
+  .chat-head .st .on{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  .chat-body{height:440px;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+  .msg{max-width:84%;padding:12px 16px;border-radius:16px;font-size:14px;white-space:pre-wrap;word-break:break-word;animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .msg.user{align-self:flex-end;background:var(--grad);color:#fff;border-bottom-right-radius:5px}
+  .msg.bot{align-self:flex-start;background:var(--bg2);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .msg.bot .who{display:flex;align-items:center;gap:8px;color:var(--acc);font-weight:700;font-size:12px;margin-bottom:6px}
+  .msg.bot .who .a{width:20px;height:20px;border-radius:50%;background:var(--grad);font-size:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff}
+  .typing{display:inline-flex;gap:5px;padding:14px 18px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;align-self:flex-start}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--sub);animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;padding:14px 20px;border-top:1px solid var(--line);background:var(--bg2)}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:999px;padding:8px 16px;font-size:13px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-1px)}
+
+  /* rules */
+  .rule{display:flex;gap:16px;padding:16px 6px;border-bottom:1px dashed var(--line);transition:.2s}
+  .rule:hover{background:rgba(217,122,168,.06)}
+  .rule .no{flex:0 0 36px;height:36px;border-radius:11px;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .rule b{display:block;font-size:15px;margin-bottom:2px}
+  .rule span{color:var(--sub);font-size:13px}
+
+  /* sample: phone mock */
+  .sample-wrap{display:grid;grid-template-columns:300px 1fr;gap:34px;align-items:start}
+  .phone{width:300px;margin:0 auto;background:#FFFFFF;border:2px solid var(--line);border-radius:34px;padding:12px;box-shadow:var(--shadow)}
+  .phone .screen{background:var(--bg2);border-radius:24px;overflow:hidden}
+  .phone .sc-head{background:#FDF1F6;padding:10px 14px;font-size:11px;color:var(--sub);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+  .phone .sc-body{padding:12px;display:flex;flex-direction:column;gap:9px;min-height:430px}
+  .fm{font-size:11px;color:var(--sub);border:1px solid var(--line);border-radius:10px;padding:8px 10px;line-height:1.6}
+  .fm b{color:var(--txt)}
+  .fm .ok{color:var(--ok)} .fm .warn{color:var(--warn)}
+  .fm.bot{align-self:flex-start;background:#0e1626;border-bottom-left-radius:3px}
+  .fm.user{align-self:flex-end;background:var(--grad);color:#fff;border:none;border-bottom-right-radius:3px}
+  .sample-txt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;font-size:14px}
+  .sample-txt pre{white-space:pre-wrap;font-family:inherit;line-height:1.85;color:var(--txt)}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;margin-right:6px;border:1px solid var(--line);color:var(--sub);vertical-align:1px}
+  .tag.core{color:var(--acc);border-color:rgba(185,95,143,.45)}
+  .tag.ext{color:var(--acc2);border-color:rgba(122,99,184,.4)}
+  .tag.ok{color:var(--ok);border-color:rgba(52,211,153,.4)}
+  .note{color:var(--warn);font-size:13px;margin-bottom:12px}
+  @media(max-width:820px){.sample-wrap{grid-template-columns:1fr}}
+
+  /* evidence */
+  .ev{font-family:Consolas,Menlo,monospace;font-size:13px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:18px;overflow-x:auto;color:#4A4350;white-space:pre;line-height:1.9}
+  .ev .t{color:var(--ok)}
+  .evc{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .evc span{font-size:12px;color:var(--sub);border:1px solid var(--line);background:var(--card);padding:6px 14px;border-radius:999px}
+
+  /* boundaries */
+  .b-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+  .b-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .b-card h4{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .b-card ul{list-style:none;color:var(--sub);font-size:14px}
+  .b-card li{padding:7px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
+  .b-card li:last-child{border-bottom:none}
+  .no{color:var(--err)} .yes{color:var(--ok)}
+
+  /* stack */
+  .stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .s-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;transition:.2s}
+  .s-card:hover{border-color:rgba(185,95,143,.45)}
+  .s-card h4{font-size:15px;margin-bottom:4px}
+  .s-card p{color:var(--sub);font-size:13px}
+
+  footer{padding:44px 0 90px;color:var(--sub);font-size:13px;text-align:center;background:linear-gradient(180deg,#F1E7F8,#EADCF4)}
+  footer .warn{color:var(--warn)}
+  #top{position:fixed;right:26px;bottom:26px;width:46px;height:46px;border-radius:50%;background:var(--grad);border:none;color:#fff;font-size:20px;cursor:pointer;opacity:0;pointer-events:none;transition:.3s;box-shadow:0 8px 22px rgba(185,95,143,.45)}
+  #top.show{opacity:1;pointer-events:auto}
+  @media(max-width:640px){.hero h1{font-size:36px}h2{font-size:26px}}
+
+  /* ===== masthead (报纸报头) ===== */
+  .masthead{text-align:center;margin-bottom:4px}
+  .mh-top{display:flex;justify-content:space-between;max-width:660px;margin:0 auto;font-size:12px;color:var(--acc);letter-spacing:2px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:16px}
+  h1.paper{font-family:"Songti SC","SimSun",serif;font-size:76px;font-weight:700;letter-spacing:16px;line-height:1;text-align:center;background:linear-gradient(90deg,#C06AA8,#9674C8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .dateline{color:var(--sub);font-size:13px;letter-spacing:4px;margin-top:14px;text-align:center}
+  .dl{max-width:320px;margin:14px auto 0;border-top:3px double var(--line)}
+  .tab{font-variant-numeric:tabular-nums}
+  h2{font-family:"Songti SC","SimSun",serif;font-weight:700}
+  .btn.primary{background:var(--grad)}
+  @media(max-width:640px){h1.paper{font-size:46px;letter-spacing:8px}}
+
+  .grid .card:nth-child(3n+1){background:linear-gradient(160deg,#FDF1F7,#FFFFFF)}
+  .grid .card:nth-child(3n+2){background:linear-gradient(160deg,#EFF9F4,#FFFFFF)}
+  .grid .card:nth-child(3n+3){background:linear-gradient(160deg,#F3EFFB,#FFFFFF)}
+  .chat-body{background:linear-gradient(180deg,#FDF5F9,#F8F3EF)}
+  .chat-head{background:linear-gradient(90deg,#F2ECFA,#FDEFF5)}
+  .ev{background:#EFF6F1}
+  .rule:hover{background:rgba(217,122,168,.07)}
+  .b-card{background:linear-gradient(160deg,#FEF8FB,#FBF6F2)}
+  .s-card{background:linear-gradient(160deg,#F3F1FB,#FFFFFF)}
+  .sample-txt{background:linear-gradient(160deg,#FFFDF9,#FBF6F2)}
+  .mock .mt span{background:#FDF6FA}
+  .stat{background:linear-gradient(160deg,#FDF3F8,#F6F2EC)}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap nav-in">
+    <div class="logo"><span class="lg">早</span>生财早报官</div>
+    <div class="nav-links">
+      <a href="#intro">能力</a><a href="#workflow">流程</a><a href="#demo">体验</a><a href="#rules">规范</a><a href="#evidence">证据</a><a href="#tests">测试</a><a href="#boundaries">边界</a><a href="#limits">局限</a>
+    </div>
+    <span class="nav-cta">公开演示页</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <div class="masthead">
+        <div class="mh-top"><span>第 001 期 · 2026-08-15</span><span>每日 06:30 出刊 · 周日出刊</span></div>
+        <h1 class="paper">生财早报</h1>
+        <div class="dateline">把「生财有术」变成你每天 10 分钟的早餐阅读</div>
+        <div class="dl"></div>
+      </div>
+      <p class="sub" style="margin-top:26px;text-align:center;margin-left:auto;margin-right:auto">一个每天 06:30 自动从「生财有术」社区抓取、筛选、深度解读，把 4-5 条优质干货 + 可落地建议，准时推送到你飞书私聊的 AI Agent。</p>
+      <div class="btns" style="justify-content:center">
+        <a class="btn primary" href="#demo">▶ 体验模拟对话</a>
+        <a class="btn" href="#rules">查看行为规范</a>
+        <a class="btn" href="#boundaries">能力边界</a>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="mh"><span class="ava">早</span><div><b style="font-size:14px">生财早报官</b><div style="font-size:11px;color:var(--ok)">● 在线 · 今日已出刊</div></div></div>
+      <div class="mb" style="font-size:14px"><b style="font-family:'Songti SC',SimSun,serif;font-size:16px">☀️ 今日头版</b><br>用 <b>406 亿 Token</b> 搭一套小红书 AI 工作台<br>南墙 · 03 年大学生 · 数字已读全文核对<br><span style="color:var(--acc)">—— 今日共 5 条，详见飞书私聊</span></div>
+      <div class="mt"><span>全文已读 4 篇</span><span>原文核心 / 编者延伸</span><span>未核对已标注</span></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="v tab">1~2h→0</div><div class="k">每天节省的人工时间</div></div>
+      <div class="stat"><div class="v tab">4-5 条</div><div class="k">每日精选内容</div></div>
+      <div class="stat"><div class="v tab">06:30</div><div class="k">准时自动推送</div></div>
+      <div class="stat"><div class="v tab">100%</div><div class="k">原文链接可追溯</div></div>
+    </div>
+  </div>
+</div>
+
+<section id="intro">
+  <div class="wrap reveal">
+    <div class="kicker">It is</div>
+    <h2>它是什么</h2>
+    <p class="lead">生财早报官 = 「生财有术」社区的专属内容编辑 + 每日推送。它不只是一个抓取器，而是一个有判断力的早报编辑：知道你要什么、什么值得推、什么必须如实说明。</p>
+    <div class="grid">
+      <div class="card"><div class="ic">📰</div><h3>自动抓取</h3><p>每天抓取社区新帖（增量）+ 精华榜，接口直连，失败自动重试。</p></div>
+      <div class="card"><div class="ic">🎯</div><h3>画像筛选</h3><p>按运营者画像过滤：小红书潮玩一件代发 / AI 小程序 / AI Agent / FDE。</p></div>
+      <div class="card"><div class="ic">📖</div><h3>全文阅读</h3><p>逐条读全文，帖子里的飞书文档也会用机器人权限读取；读不到的如实声明。</p></div>
+      <div class="card"><div class="ic">🧠</div><h3>深度解读</h3><p>每条标注「深意」：原文核心 vs 编者延伸，不把引申写成原文。</p></div>
+      <div class="card"><div class="ic">💡</div><h3>建议 + 情绪价值</h3><p>末尾附 1-3 条可实操建议 + 可更换风格的情绪价值输出（默认热血伙伴式）。</p></div>
+      <div class="card"><div class="ic">🗂️</div><h3>归档与去重</h3><p>自动归档到表格、维护去重台账，跨日不重复推送。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="workflow">
+  <div class="wrap reveal">
+    <div class="kicker">Workflow</div>
+    <h2>每天是怎么运转的</h2>
+    <p class="lead">全程无人值守，电脑会自动唤醒并完成整套流程。</p>
+    <div class="tl">
+      <div class="step"><div class="time">06:05</div><h4>自动唤醒 + 网关重启</h4><p>计划任务唤醒电脑并重启网关，保证运行环境干净。</p></div>
+      <div class="step"><div class="time">06:30</div><h4>抓取与筛选</h4><p>抓取自上次推送以来的新帖 + 精华榜，按画像过滤，水帖不推。</p></div>
+      <div class="step"><div class="time">06:30-06:50</div><h4>全文阅读与解读</h4><p>逐条读全文（含飞书文档），核对关键数字，标注深意来源。</p></div>
+      <div class="step"><div class="time">完成</div><h4>生成、推送、归档</h4><p>生成 4-5 条早报推送到飞书私聊，并写入归档表格与去重台账。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="demo" style="background:linear-gradient(180deg,#FDF1F7,#FBEFF5)">
+  <div class="wrap reveal">
+    <div class="kicker">Try it</div>
+    <h2>体验模拟对话</h2>
+    <p class="lead">这是<strong>预置的示例对话</strong>（非实时调用，不连接任何服务），用来直观感受它回答问题的风格与思路。点击下方问题试试。</p>
+    <div class="chat">
+      <div class="chat-head"><span class="ava">早</span><div><b style="font-size:15px">生财早报官</b><div style="font-size:11px;color:var(--sub)">每日 06:30 推送</div></div><span class="st"><span class="on"></span>模拟演示 · 非实时</span></div>
+      <div class="chat-body" id="chatBody"></div>
+      <div class="chips" id="chips">
+        <button class="chip" data-q="today">今天有什么值得看的？</button>
+        <button class="chip" data-q="trust">你怎么保证内容真实可信？</button>
+        <button class="chip" data-q="filter">你按什么标准筛选？</button>
+        <button class="chip" data-q="boundary">你的能力边界是什么？</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="rules">
+  <div class="wrap reveal">
+    <div class="kicker">Rules</div>
+    <h2>行为规范（完整 12 条 + 为什么）</h2>
+    <p class="lead">这些规则写死在它的任务配置里，是它每天行为的底线——每条都对应一个"为什么"。</p>
+    <div class="rule"><div class="no">1</div><div><b>抓取</b><span>抓「生财有术」新帖（自上次推送以来的增量）+ 精华榜；失败自动重试最多 3 次。<em style="color:var(--dim)">为什么：数据源实时，不漏推、不重复。</em></span></div></div>
+    <div class="rule"><div class="no">2</div><div><b>画像筛选</b><span>按运营者画像过滤：大学生独立创业女性/家族创一代；小红书潮玩一件代发、AI/AI小程序、AI Agent；未来 FDE。官方/星主必推，水帖不推。<em style="color:var(--dim)">为什么：保证每条都跟你的业务有关。</em></span></div></div>
+    <div class="rule"><div class="no">3</div><div><b>阅读全文</b><span>每天 4-5 条（含 1 条新领域探索），每条应读全文，帖子里的飞书文档也算。<em style="color:var(--dim)">为什么：只看摘要会失真，结论要建立在全文上。</em></span></div></div>
+    <div class="rule"><div class="no">4</div><div><b>飞书链接读取</b><span>帖子里的飞书链接用 read_feishu.py（机器人权限）读全文，读取成功才算读过。<em style="color:var(--dim)">为什么：不用登录就能拿到公开文档正文。</em></span></div></div>
+    <div class="rule"><div class="no">5</div><div><b>如实声明</b><span>读不到全文的（非公开/需登录）明确标注「仅据帖内摘要/正文，未读飞书全文」；开头不得宣称"全文阅读均已完成"；关键数字未核对加注「（据帖内摘要，未核对全文）」。<em style="color:var(--dim)">为什么：不硬编、不夸大，值得信任。</em></span></div></div>
+    <div class="rule"><div class="no">6</div><div><b>输出字段</b><span>标题/领域/摘要/深意/作者/推荐理由/原文链接/重点作者⭐；深意标「原文核心/编者延伸」；标题不擅改（改了标注原标题）。<em style="color:var(--dim)">为什么：每条可溯源，能分清"原文说的"和"我的引申"。</em></span></div></div>
+    <div class="rule"><div class="no">7</div><div><b>建议 + 情绪价值</b><span>末尾 1-3 条可实操建议 + 可更换风格的情绪价值输出（默认热血伙伴式）。<em style="color:var(--dim)">为什么：不止喂信息，还给行动和情绪。</em></span></div></div>
+    <div class="rule"><div class="no">8</div><div><b>推送顺序</b><span>官方/星主最前 → 其他 → 新领域最后。<em style="color:var(--dim)">为什么：按重要性排序，重要内容先看到。</em></span></div></div>
+    <div class="rule"><div class="no">9</div><div><b>全文一致性</b><span>时间口径统一为"自上次推送以来"；先核对发布日期；定稿前通读，杜绝前后矛盾。<em style="color:var(--dim)">为什么：开头说无新帖、结尾说一堆新帖，就是事故。</em></span></div></div>
+    <div class="rule"><div class="no">10</div><div><b>归档与去重</b><span>归档表格结构完整（运行记录放末尾「## 运行记录」）；维护去重台账（帖子 ID+标题+日期），跨日不重复、作者不连续刷屏。<em style="color:var(--dim)">为什么：长期可查、不打扰。</em></span></div></div>
+    <div class="rule"><div class="no">11</div><div><b>无新帖兜底</b><span>无新帖 → 说明 → 补昨日 → 仍无 → 推精华榜；不硬造内容。<em style="color:var(--dim)">为什么：宁缺毋滥，绝不编造。</em></span></div></div>
+    <div class="rule"><div class="no">12</div><div><b>输出与凭证</b><span>简体中文、直接给最终早报（不给计划）；抓取凭证在环境变量 SCYS_TOKEN。<em style="color:var(--dim)">为什么：开箱即用，不用你追问。</em></span></div></div>
+  </div>
+</section>
+
+<section id="sample">
+  <div class="wrap reveal">
+    <div class="kicker">Real output</div>
+    <h2>真实输出示例</h2>
+    <p class="lead">摘自 2026-08-15 实际生成的内容（已脱敏）——左：手机里的飞书消息样子；右：内容细节。</p>
+    <div class="sample-wrap">
+      <div class="phone">
+        <div class="screen">
+          <div class="sc-head"><span style="color:var(--ok)">●</span> 生财早报官 · 私聊</div>
+          <div class="sc-body">
+            <div class="fm user">早上好 ☀️ 今天的早报来了</div>
+            <div class="fm bot"><b>📋 阅读范围</b>（如实声明）<br><span class="ok">✔</span> 已读全文 4 篇：南墙 / 小猪哥 / 路飞 / 富二蛋<br><span class="warn">⚠</span> 小猪哥标题「营收翻倍」全文未出现 → <b>（据帖内摘要，未核对全文）</b></div>
+            <div class="fm bot"><b>① 用 406 亿 Token 搭小红书 AI 工作台</b><br>南墙 · 03 年大学生<br><span class="tag core">原文核心</span>人守判断、AI 接管重复<br><span class="tag ext">编者延伸</span>可平移到潮玩一件代发</div>
+            <div class="fm bot">末尾还有 3 条可实操建议 + 情绪价值 🚀</div>
+          </div>
+        </div>
+      </div>
+      <div class="sample-txt">
+        <div class="note">⚠️ 格式演示稿 · 非正式推送 · 展示"如实声明 + 深意标注"的新格式</div>
+        <pre>📋 阅读范围（如实声明）
+- 已读全文（4 篇）：南墙、小猪哥、路飞、富二蛋，均通过飞书文档读取全文。
+- 关键数字核对结果：南墙（90 天 406.11 亿 Token）、路飞（6 月到账 11288 元）——已在全文中读到，属实。
+- 未核对项：小猪哥标题「营收翻倍」在全文中未出现"翻倍"二字 → 标注「（据帖内摘要，未核对全文）」。
+
+① 大二开公司、从没上过班，我是怎么用 406 亿 Token 搭了一套小红书 AI 工作台
+   · 作者：南墙（03 年大学生创业者）｜ 领域：小红书获客 / AI 工作台
+   · 深意：<span class="tag core">原文核心</span>「AI 处理重复的采集/整理/分析，我负责选方向、定产品、最后验收」
+          <span class="tag ext">编者延伸</span>这套三环 AI 化可平移到潮玩一件代发，把选品/验收留在自己手里
+   · 原文链接：scys.com/articleDetail/xq_topic/55522822524518814
+
+② AI 时代的 FDE：一个真实生产项目的四周复盘
+   · 作者：大铭（L25 圈友）｜ 领域：FDE / AI 企业服务
+   · 深意：<span class="tag core">原文核心</span>「平台返回值 ≠ 业务事实，群邀请是非幂等副作用」
+          <span class="tag ext">编者延伸</span>代码越来越便宜，贵的是"定义业务事实 + 对结果负责"
+   · 原文链接：scys.com/articleDetail/xq_topic/22255155251854141
+
+【今日建议 + 情绪价值 · 节选】
+   · 建议①：给 AI 配一台安卓真机采集潮玩赛道数据，只筛"近期 + 低粉 + 爆款"的对标再上笔记
+   · 情绪价值：别急，你的「小红书潮玩一件代发 + AI」这把剑一直很利，今天挑一条建议练扎实，比刷十篇都强。</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="evidence" style="background:linear-gradient(180deg,#F1F9F4,#EDF7F1)">
+  <div class="wrap reveal">
+    <div class="kicker">Proof</div>
+    <h2>真实运行证据</h2>
+    <p class="lead">最近几次实际运行的推送日志（带时间戳）。</p>
+    <div class="ev"><span class="t">2026-08-15 09:32:26</span>  Job '生财早报' → delivered to feishu 私聊
+<span class="t">2026-08-15 10:08:04</span>  Job '生财早报' → delivered to feishu 私聊
+<span class="t">2026-08-15 11:16:20</span>  Job '生财早报·演示稿' → delivered to feishu 私聊（5454 字）</div>
+    <div class="evc"><span>📄 归档表格</span><span>🗂️ 去重台账（16 主推 + 3 提及）</span><span>🧾 完整运行日志</span><span>✅ 102 轮深度调用（09:32）</span></div>
+  </div>
+</section>
+
+<section id="tests">
+  <div class="wrap reveal">
+    <div class="kicker">Case tests</div>
+    <h2>上线前三组案例实测</h2>
+    <p class="lead">2026-08-15 用真实配置跑的三组测试，全部通过——覆盖典型主流程、边缘兜底、真实工作场景（未污染归档与台账）。</p>
+    <div class="grid">
+      <div class="card">
+        <div class="ic">1️⃣</div>
+        <h3>典型输入 · 主流程</h3>
+        <p><b style="color:var(--txt)">输入：</b>"今天有什么值得看的？给我一份今天的早报。"</p>
+        <p><b style="color:var(--txt)">表现：</b>完整主流程——抓新帖+精华榜 → 画像筛选 → 读全文（含飞书文档）→ 生成 4-5 条 + 建议 + 情绪价值。</p>
+        <p><b style="color:var(--txt)">亮点：</b>如实声明阅读范围；深意标「原文核心/编者延伸」；全部带原文链接。</p>
+        <p style="margin-top:12px"><span class="tag ok">✅ 通过</span><span class="tag">耗时 3.5 分钟</span></p>
+      </div>
+      <div class="card">
+        <div class="ic">2️⃣</div>
+        <h3>边缘输入 · 兜底与边界</h3>
+        <p><b style="color:var(--txt)">输入：</b>"用今天的早报内容帮我写一条小红书爆款文案。"</p>
+        <p><b style="color:var(--txt)">表现：</b>先照常产出今日精选；对越界的"代写文案"请求，明确说明职责边界、不越权代写，并给出替代方案。</p>
+        <p><b style="color:var(--txt)">亮点：</b>不硬来、有交代，兜底处理得当。</p>
+        <p style="margin-top:12px"><span class="tag ok">✅ 通过</span><span class="tag">耗时 4 分钟</span></p>
+      </div>
+      <div class="card">
+        <div class="ic">3️⃣</div>
+        <h3>真实场景 · 实际工作</h3>
+        <p><b style="color:var(--txt)">输入：</b>"下周发 3 条小红书潮玩笔记，挑 2 条可借鉴打法 + 1 条落地建议。"</p>
+        <p><b style="color:var(--txt)">表现：</b>诚实说明今日无潮玩专帖，再从精华榜挖出 2 条可迁移打法（种草决策场 / 人做选择题、AI 做填空题）并给落地建议。</p>
+        <p><b style="color:var(--txt)">亮点：</b>对实际工作有直接帮助，未核对数字如实标注。</p>
+        <p style="margin-top:12px"><span class="tag ok">✅ 通过</span><span class="tag">耗时 4.5 分钟</span></p>
+      </div>
+    </div>
+  </div>
+﻿  <div style="margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px">
+    <h3 style="font-size:17px;margin-bottom:10px">🔍 怎么验证这些测试是真的</h3>
+    <p style="color:var(--sub);font-size:13px;margin-bottom:14px">以下证据来自本机运行系统（<b style="color:var(--txt)">执行记录库</b>与<b style="color:var(--txt)">运行日志</b>），可直接下载核验；完整回复原文在你的飞书私聊里，可截图对照（会话 ID 与时间戳一致）。</p>
+    <div class="ev" style="font-size:12.5px">执行记录（executions.db）
+job_id=474023710eba  completed  2026-08-15 11:53:50 → 11:57:25
+job_id=65bae5eb962f  completed  2026-08-15 12:02:07 → 12:06:46
+job_id=47288c07bbed  completed  2026-08-15 12:09:00 → 12:12:30
+
+投递日志（agent.log，含会话 ID）
+2026-08-15 11:57:25  Job 474023710eba delivered (session cron_474023710eba_20260815_115350)
+2026-08-15 12:06:46  Job 65bae5eb962f  delivered (session cron_65bae5eb962f_20260815_120207)
+2026-08-15 12:12:30  Job 47288c07bbed delivered (session cron_47288c07bbed_20260815_120901)</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px">
+      <a href="evidence/executions_case_tests.txt" download style="font-size:12px;color:var(--acc);border:1px solid rgba(185,95,143,.45);padding:6px 14px;border-radius:999px;background:rgba(185,95,143,.09)">⬇ 执行记录.txt</a>
+      <a href="evidence/agent_log_case_tests.txt" download style="font-size:12px;color:var(--acc);border:1px solid rgba(185,95,143,.45);padding:6px 14px;border-radius:999px;background:rgba(185,95,143,.09)">⬇ 日志片段.txt</a>
+      <span style="font-size:11px;color:var(--dim)">SHA-256：executions 6357191A… ｜ log 6D672E81…</span>
+    </div>
+    <p style="color:var(--sub);font-size:12px;margin-top:12px">说明：静态展示页无法做到密码学级证明；「你的飞书聊天记录 + 本机执行记录/日志 + 文件哈希」是实际可查证的最强组合。若需要更强背书，可对证据文件做可信时间戳或上链。</p>
+  </div></section>
+
+<section id="boundaries" style="background:linear-gradient(180deg,#F6F2FB,#F1EBF7)">
+  <div class="wrap reveal">
+    <div class="kicker">Boundaries</div>
+    <h2>能力边界（诚实说明）</h2>
+    <p class="lead">它不是什么都能做——边界写清楚，才值得信任。</p>
+    <div class="b-grid">
+      <div class="b-card"><h4><span class="yes">✔</span>它能做</h4><ul>
+        <li><span>抓取生财有术新帖与精华榜</span></li>
+        <li><span>按画像筛选、读全文、生成早报</span></li>
+        <li><span>读取公开分享的飞书文档</span></li>
+        <li><span>归档、去重、定时推送</span></li>
+      </ul></div>
+      <div class="b-card"><h4><span class="no">✘</span>它不能做</h4><ul>
+        <li><span>读取"非公开/需登录"的飞书文档</span></li>
+        <li><span>浏览器抓取（无浏览器环境，依赖接口）</span></li>
+        <li><span>绕过任何登录墙或付费墙</span></li>
+        <li><span>本页不接真实服务：他人无法调用它</span></li>
+      </ul></div>
+      <div class="b-card"><h4><span style="color:var(--warn)">⚠</span>需要人工</h4><ul>
+        <li><span>账号凭证约 4 天过期，需更新</span></li>
+        <li><span>电脑关机/断网时不会执行</span></li>
+        <li><span>异常时需查运行日志</span></li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="wrap reveal">
+    <div class="kicker">Stack</div>
+    <h2>技术栈</h2>
+    <div class="stack">
+      <div class="s-card"><h4>Hermes</h4><p>核心引擎：网关 + 定时调度 + Agent 运行</p></div>
+      <div class="s-card"><h4>飞书开放平台</h4><p>消息收发 + 文档读取（机器人权限）</p></div>
+      <div class="s-card"><h4>DeepSeek</h4><p>内容生成模型（deepseek-v4-pro）</p></div>
+      <div class="s-card"><h4>Codex</h4><p>搭建、调试与运维维护</p></div>
+    </div>
+  </div>
+</section>
+
+
+<section id="tech">
+  <div class="wrap reveal">
+    <div class="kicker">How it works</div>
+    <h2>技术实现（它是怎么转起来的）</h2>
+    <div class="stack">
+      <div class="s-card"><h4>Hermes 网关</h4><p>飞书长连接 + 消息收发 + cron 调度，每天 06:05 由计划任务重启，保证环境干净。</p></div>
+      <div class="s-card"><h4>抓取</h4><p>scys.com 接口直连（X-TOKEN 凭证），抓新帖增量 + 精华榜，失败自动重试。</p></div>
+      <div class="s-card"><h4>全文读取</h4><p>read_feishu.py 通过飞书开放接口读帖子里的公开文档全文，无需登录。</p></div>
+      <div class="s-card"><h4>内容生成</h4><p>DeepSeek（deepseek-v4-pro）负责筛选、解读、撰写与情绪价值。</p></div>
+      <div class="s-card"><h4>归档与台账</h4><p>Markdown 归档表 + 去重台账（帖子 ID 跨日查重）。</p></div>
+      <div class="s-card"><h4>本展示页</h4><p>单文件静态页，零外部请求、零后端、不含任何密钥——纯介绍与演示。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap reveal">
+    <div class="kicker">FAQ</div>
+    <h2>常见问题</h2>
+    <p class="lead">访客最常问的 10 个问题，先回答清楚。</p>
+    <div class="rule"><div class="no">?</div><div><b>内容是真的吗？</b><span>每条都带真实原文链接，标题与原文一致；逐条读全文、关键数字核对后才下结论；未核对的明确加注。上线前还跑过三组验收测试（见"案例实测"）。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>为什么有时早上没准时收到？</b><span>第一版跑在你的个人笔记本上，需要"插电 + 在线"；电脑休眠时会错过 06:30，但唤醒后会自动补跑。v1.1 计划迁移到 7×24 云服务器（详见"局限"）。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>X-TOKEN 是什么？多久要换？</b><span>它是"生财有术"社区接口的登录凭证，约 4 天过期；过期后抓取会失败，需重新登录复制更新（已设到期提醒）。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>别人能通过这个网页调用它吗？</b><span>不能。本页是静态展示页：零外部请求、零后端、零接口，任何人无法通过本页调用该 Agent。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>我的数据安全吗？</b><span>安全。页面不含任何密钥/路径；Agent 只把早报推送到你自己的飞书私聊，不外发任何数据。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>能换风格 / 改筛选吗？</b><span>能。改任务配置里的第 2 条（画像）和第 7 条（情绪价值风格）即可，随时可调。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>一次生成要多久？</b><span>深度阅读 + 生成约 15-20 分钟，全程后台自动，你只管看结果。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>怎么触发它？</b><span>每天 06:30 自动推送；也可手动触发（hermes -p default cron run e18a23e54ff7）。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>会重复推送吗？</b><span>不会。有去重台账（帖子 ID 跨日查重）+ 作者曝光冷却，已推过的帖子不重复。</span></div></div>
+    <div class="rule"><div class="no">?</div><div><b>以后会改进什么？</b><span>v1.1 路线：云服务器 7×24、预览草稿模式、浏览器抓取能力、更长有效期的凭证方案。</span></div></div>
+  </div>
+</section>
+
+<section id="reproduce">
+  <div class="wrap reveal">
+    <div class="kicker">Reproduce</div>
+    <h2>怎么复现它</h2>
+    <p class="lead">需要：一台常开的 Windows 电脑 + Hermes 环境 + 飞书自建机器人 + DeepSeek API + 社区账号凭证。具备命令行能力的同学可按 Hermes 官方文档 + 定时任务配置复现；纯小白建议找人代配。本展示页不提供任何可调用的接口。</p>
+  </div>
+</section>
+
+
+<section id="limits">
+  <div class="wrap reveal">
+    <div class="kicker">v1.0 · Known issues</div>
+    <h2>第一版的缺陷与不足（诚实版）</h2>
+    <p class="lead">不藏问题——第一版有哪些坑、翻过哪些车，如实写在这里，也作为后续迭代的路线图。</p>
+    <div class="rule"><div class="no">1</div><div><b>依赖本机在线</b><span>电脑休眠/关机时 06:30 不会推送。已配 06:05 自动唤醒，但笔记本夜间不插电时唤醒定时器会被系统禁用（见下方翻车记录）；错过会自动补跑。</span></div></div>
+    <div class="rule"><div class="no">2</div><div><b>凭证约 4 天过期</b><span>社区登录 X-TOKEN 过期后抓取失败，需手动更新（已设 8/18、8/19 到期提醒）。</span></div></div>
+    <div class="rule"><div class="no">3</div><div><b>非公开飞书文档读不了</b><span>需登录/非公开的文档只能如实标注「未读全文」，不硬编。</span></div></div>
+    <div class="rule"><div class="no">4</div><div><b>无浏览器抓取能力</b><span>依赖接口，反爬/登录墙内容抓不到。</span></div></div>
+    <div class="rule"><div class="no">5</div><div><b>单次生成 15-20 分钟</b><span>深度阅读 + 生成耗时较长，后台自动完成。</span></div></div>
+    <div class="rule"><div class="no">6</div><div><b>手动触发即推送</b><span>无「预览草稿」模式，误触会直接推送；预览模式列入 v1.1。</span></div></div>
+    <div class="rule"><div class="no">7</div><div><b>网关长跑偶发失联</b><span>长时间运行后消息响应变慢，已用每日重启缓解。</span></div></div>
+    <div class="ev" style="margin-top:22px">【真实翻车记录 · 2026-08-16】
+06:30 未按时推送：笔记本夜间未插电，06:05 唤醒定时器在电池供电下被系统禁用
+08:59 唤醒 → 09:00 自动补跑，当天早报稍晚送达
+→ 结论：第一版要求「电脑插电 + 在线」；v1.1 计划迁移到 7×24 云服务器，摆脱对个人电脑的依赖。</div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>本页面为 <strong>静态展示页</strong>：未连接任何真实 API、不存储/外发任何数据、他人无法通过本页调用该 Agent。</p>
+    <p style="margin-top:8px">对话区为预置示例内容，用于展示 Agent 的形态与回答风格。</p>
+  </div>
+</footer>
+
+<button id="top" title="回到顶部">↑</button>
+
+<script>
+const chatBody=document.getElementById('chatBody');
+const chips=document.getElementById('chips');
+const ANSWERS={
+today:"今天给你挑了 4 条，主线是「小红书获客 → AI 客服 → 成交转化」：\n① 南墙：用 406 亿 Token 搭小红书 AI 工作台（03 年同龄人，关键数字已读全文核对属实）；\n② 小猪哥：年投百万小红书、用 AI 客服把跨境客户转化率干到 20%（FDE 定价参照）；\n③ 路飞：从不会编程到用 Codex 接定制单，6 月到账 11288 元；\n④ 石更新：谈「AI 控下限、真人提上限」。\n每条都附原文链接和「深意（原文核心 / 编者延伸）」。想细看哪条？",
+trust:"三条机制：\n① 每条都带真实原文链接，标题与原文一致，无幻觉链接；\n② 我逐条读全文——帖子里的飞书文档也会用机器人权限读取，开头如实声明「哪些读了全文、哪些只看到摘要」；\n③ 关键数字（金额、比例、Token 数）未经全文核对的，一律加注「（据帖内摘要，未核对全文）」。\n我绝不把没读过的内容说成读过。",
+filter:"按运营者画像：\n· 大学生独立创业女性 / 家族创一代\n· 主线：小红书潮玩一件代发（笔记引流 → 选品 → 货源）、AI / AI 小程序、AI Agent 架构\n· 未来方向：FDE（行业专属 AI 方案）\n官方 / 星主通知必推，水帖不推；每天 4-5 条，含 1 条新领域探索。",
+boundary:"几条边界，先说清楚：\n① 只读「生财有术」社区内容，且依赖账号凭证（约 4 天需更新一次）；\n② 非公开 / 需登录的飞书文档读不了，我会如实标注、不硬编；\n③ 没有浏览器抓取能力，靠接口；\n④ 需要电脑在 06:30 在线（已配置自动唤醒）；\n⑤ 我不接任何第三方 API、不外发数据，早报只推到你自己的飞书私聊。"
+};
+function addMsg(who,text){
+  const d=document.createElement('div');
+  d.className='msg '+who;
+  if(who==='bot'){d.innerHTML='<span class="who"><span class="a">早</span>生财早报官</span>'+text.replace(/\n/g,'<br>');}
+  else{d.textContent=text;}
+  chatBody.appendChild(d);chatBody.scrollTop=chatBody.scrollHeight;
+  return d;
+}
+function showTyping(){
+  const t=document.createElement('div');t.className='typing';t.innerHTML='<i></i><i></i><i></i>';
+  chatBody.appendChild(t);chatBody.scrollTop=chatBody.scrollHeight;return t;
+}
+function typeReply(text,el){
+  const who=el.querySelector('.who');
+  let i=0;
+  const body=document.createElement('span');
+  el.appendChild(body);
+  const full=text;
+  (function step(){
+    if(i<full.length){
+      body.textContent=full.slice(0,++i);
+      chatBody.scrollTop=chatBody.scrollHeight;
+      setTimeout(step,12);
+    } else {
+      body.innerHTML=full.replace(/\n/g,'<br>');
+      chatBody.scrollTop=chatBody.scrollHeight;
+    }
+  })();
+  void who;
+}
+chips.addEventListener('click',e=>{
+  const btn=e.target.closest('.chip');if(!btn)return;
+  const q=btn.dataset.q;if(!ANSWERS[q])return;
+  btn.disabled=true;btn.style.opacity=.5;
+  addMsg('user',btn.textContent);
+  const t=showTyping();
+  setTimeout(()=>{t.remove();typeReply(ANSWERS[q],addMsg('bot',''));},650);
+});
+addMsg('bot','你好，我是生财早报官 👋\n每天 06:30 自动从「生财有术」挑干货推给你。\n点下面任意一个问题，看看我会怎么回答：');
+
+/* scroll reveal + nav + top */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+const nav=document.getElementById('nav'),topBtn=document.getElementById('top');
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled',window.scrollY>10);
+  topBtn.classList.toggle('show',window.scrollY>600);
+},{passive:true});
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+</script>
+</body>
+</html>
+
+
+
